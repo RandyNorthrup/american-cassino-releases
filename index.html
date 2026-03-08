@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>American Cassino — Classic Card Game</title>
+    <meta name="description" content="American Cassino: a classic card game with AI opponents and online multiplayer. Download for Windows, macOS, and Linux.">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+        :root {
+            --bg-dark: #0e1f15;
+            --bg: #1a3322;
+            --surface: #1e4430;
+            --panel: #162b1e;
+            --accent: #c9a84c;
+            --accent-dim: #a08030;
+            --gold-text: #f0d78c;
+            --text: #d4c9a0;
+            --text-muted: #8aaa8a;
+            --border: #c9a84c33;
+            --card-face: #fef7eb;
+            --red-suit: #c0392b;
+            --shadow: rgba(0, 0, 0, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Felt texture background ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 30% 20%, #1e4430 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 80%, #1a3322 0%, transparent 60%),
+                linear-gradient(180deg, #0e1f15 0%, #1a3322 30%, #1e4430 60%, #0e1f15 100%);
+            z-index: -2;
+        }
+
+        /* Floating suit symbols */
+        .suit-bg {
+            position: fixed;
+            font-size: 80px;
+            opacity: 0.04;
+            color: var(--accent);
+            z-index: -1;
+            animation: float 8s ease-in-out infinite;
+            pointer-events: none;
+            user-select: none;
+        }
+        .suit-bg:nth-child(1) { top: 8%; left: 5%; animation-delay: 0s; }
+        .suit-bg:nth-child(2) { top: 15%; right: 8%; animation-delay: 2s; font-size: 60px; }
+        .suit-bg:nth-child(3) { top: 55%; left: 10%; animation-delay: 4s; font-size: 70px; }
+        .suit-bg:nth-child(4) { top: 70%; right: 12%; animation-delay: 1s; }
+        .suit-bg:nth-child(5) { top: 35%; left: 85%; animation-delay: 3s; font-size: 50px; }
+        .suit-bg:nth-child(6) { top: 85%; left: 40%; animation-delay: 5s; font-size: 55px; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* ── Header ── */
+        header {
+            text-align: center;
+            padding: 80px 20px 40px;
+        }
+
+        .suit-row {
+            font-size: 28px;
+            color: var(--accent);
+            opacity: 0.5;
+            letter-spacing: 12px;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 700;
+            color: var(--gold-text);
+            text-shadow: 0 2px 8px var(--shadow);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            font-style: italic;
+            color: var(--text-muted);
+            opacity: 0.8;
+        }
+
+        .version-badge {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 4px 16px;
+            border: 1px solid var(--accent);
+            border-radius: 20px;
+            color: var(--accent);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        /* ── Main content ── */
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ── Download cards ── */
+        .downloads {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 24px;
+            margin: 48px 0;
+        }
+
+        .dl-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px 24px;
+            text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .dl-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px var(--shadow);
+            border-color: var(--accent);
+        }
+
+        .dl-card .platform-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .dl-card h3 {
+            color: var(--gold-text);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .dl-card .dl-info {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .dl-btn {
+            display: inline-block;
+            padding: 12px 32px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+            color: var(--bg-dark);
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: filter 0.2s ease, transform 0.1s ease;
+            letter-spacing: 0.5px;
+        }
+
+        .dl-btn:hover {
+            filter: brightness(1.15);
+            transform: scale(1.03);
+        }
+
+        .dl-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* ── Divider ── */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 48px 0;
+        }
+
+        /* ── Features section ── */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 32px;
+            margin: 48px 0;
+        }
+
+        .feature {
+            text-align: center;
+            padding: 24px 16px;
+        }
+
+        .feature-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .feature h3 {
+            color: var(--gold-text);
+            font-size: 1.15rem;
+            margin-bottom: 8px;
+        }
+
+        .feature p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* ── Section titles ── */
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gold-text);
+            margin-bottom: 8px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-style: italic;
+            margin-bottom: 32px;
+        }
+
+        /* ── Checksums ── */
+        .checksums {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+
+        .checksums h3 {
+            color: var(--gold-text);
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+        }
+
+        .checksums code {
+            display: block;
+            background: var(--bg-dark);
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ── Card fan decoration ── */
+        .card-fan {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin: 32px 0;
+            perspective: 600px;
+        }
+
+        .mini-card {
+            width: 60px;
+            height: 84px;
+            background: var(--card-face);
+            border: 2px solid #c9a84c;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 4px 12px var(--shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .mini-card:nth-child(1) { transform: rotate(-15deg) translateY(8px); }
+        .mini-card:nth-child(2) { transform: rotate(-5deg) translateY(2px); z-index: 1; }
+        .mini-card:nth-child(3) { transform: rotate(5deg) translateY(2px); z-index: 2; }
+        .mini-card:nth-child(4) { transform: rotate(15deg) translateY(8px); z-index: 1; }
+
+        .mini-card .red { color: var(--red-suit); }
+        .mini-card .black { color: #1a1a2e; }
+
+        .card-fan:hover .mini-card:nth-child(1) { transform: rotate(-20deg) translateY(4px); }
+        .card-fan:hover .mini-card:nth-child(2) { transform: rotate(-7deg) translateY(-2px); }
+        .card-fan:hover .mini-card:nth-child(3) { transform: rotate(7deg) translateY(-2px); }
+        .card-fan:hover .mini-card:nth-child(4) { transform: rotate(20deg) translateY(4px); }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            header { padding: 48px 16px 24px; }
+            .downloads { grid-template-columns: 1fr; gap: 16px; }
+            .features { grid-template-columns: 1fr; }
+        }
+
+        /* ── Loading state for dynamic version ── */
+        .loading { opacity: 0.5; }
+    </style>
+</head>
+<body>
+
+<!-- Background suit symbols -->
+<span class="suit-bg">&#9824;</span>
+<span class="suit-bg">&#9829;</span>
+<span class="suit-bg">&#9830;</span>
+<span class="suit-bg">&#9827;</span>
+<span class="suit-bg">&#9824;</span>
+<span class="suit-bg">&#9829;</span>
+
+<header>
+    <div class="suit-row">&#9824; &#9829; &#9830; &#9827;</div>
+    <h1>American Cassino</h1>
+    <p class="subtitle">A Classic Card Game</p>
+    <span class="version-badge" id="version-badge">Loading...</span>
+</header>
+
+<main class="container">
+
+    <!-- Card fan decoration -->
+    <div class="card-fan">
+        <div class="mini-card"><span class="black">A&#9824;</span></div>
+        <div class="mini-card"><span class="red">K&#9829;</span></div>
+        <div class="mini-card"><span class="black">10&#9827;</span></div>
+        <div class="mini-card"><span class="red">2&#9830;</span></div>
+    </div>
+
+    <h2 class="section-title">Download</h2>
+    <p class="section-subtitle">Choose your platform</p>
+
+    <div class="downloads" id="downloads">
+        <!-- Windows -->
+        <div class="dl-card">
+            <div class="platform-icon">🪟</div>
+            <h3>Windows</h3>
+            <p class="dl-info">Windows 10/11 (64-bit)<br>NSIS Installer (.exe)</p>
+            <a class="dl-btn" id="dl-windows" href="#" onclick="return false;">Download</a>
+        </div>
+
+        <!-- macOS -->
+        <div class="dl-card">
+            <div class="platform-icon">🍎</div>
+            <h3>macOS</h3>
+            <p class="dl-info">macOS 12+ (Universal)<br>Disk Image (.dmg)</p>
+            <a class="dl-btn" id="dl-macos" href="#" onclick="return false;">Download</a>
+        </div>
+
+        <!-- Linux -->
+        <div class="dl-card">
+            <div class="platform-icon">🐧</div>
+            <h3>Linux</h3>
+            <p class="dl-info">Ubuntu 22.04+ / Debian<br>Package (.deb)</p>
+            <a class="dl-btn" id="dl-linux" href="#" onclick="return false;">Download</a>
+        </div>
+    </div>
+
+    <div class="checksums">
+        <h3>&#128274; Verify Your Download</h3>
+        <code id="checksum-cmd">sha256sum -c CHECKSUMS.sha256</code>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px;">
+            <a id="checksum-link" href="#" style="color: var(--accent);">Download CHECKSUMS.sha256</a>
+        </p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Features -->
+    <h2 class="section-title">Features</h2>
+    <p class="section-subtitle">Everything you need for the classic card game</p>
+
+    <div class="features">
+        <div class="feature">
+            <div class="feature-icon">🃏</div>
+            <h3>Full Rule Set</h3>
+            <p>Capture, trail, build, and call — complete American Cassino rules with multi-card build support.</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">🤖</div>
+            <h3>Smart AI</h3>
+            <p>Three difficulty tiers: Easy, Medium, and Hard. Hard mode uses opening books and transposition tables.</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">🌐</div>
+            <h3>Online Multiplayer</h3>
+            <p>Host or join games via relay server. Quick match, friend invites, and ranked play with Elo ratings.</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">🏆</div>
+            <h3>Leaderboards</h3>
+            <p>Track your best scores locally and compete in ranked matches for Elo rating glory.</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">🎨</div>
+            <h3>Themes</h3>
+            <p>Classic parchment or modern blue cards. Green felt or dark wood playmats. Your table, your style.</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">♿</div>
+            <h3>Accessible</h3>
+            <p>Full keyboard navigation, reduced motion, high contrast, and enlarged text options.</p>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- System requirements -->
+    <h2 class="section-title">System Requirements</h2>
+    <div class="features" style="margin-top: 24px;">
+        <div class="feature">
+            <h3>Windows</h3>
+            <p>Windows 10 or later (64-bit). ~120 MB disk space. No additional dependencies needed.</p>
+        </div>
+        <div class="feature">
+            <h3>macOS</h3>
+            <p>macOS 12 Monterey or later. Universal binary (Intel + Apple Silicon). ~150 MB disk space.</p>
+        </div>
+        <div class="feature">
+            <h3>Linux</h3>
+            <p>Ubuntu 22.04+ or Debian-based. Qt 6 runtime libraries. ~100 MB disk space.</p>
+        </div>
+    </div>
+
+</main>
+
+<footer>
+    <p style="margin-bottom: 8px;">&#9824; &#9829; &#9830; &#9827;</p>
+    <p>&copy; 2026 American Cassino &mdash; A Classic Card Game</p>
+    <p style="margin-top: 8px;">
+        <a href="https://github.com/RandyNorthrup/american-cassino-releases/releases">All Releases</a>
+    </p>
+</footer>
+
+<script>
+    // Fetch the latest release from GitHub API and populate download links.
+    // Falls back gracefully if the API is unavailable.
+    (async function() {
+        const REPO = 'RandyNorthrup/american-cassino-releases';
+        const badge = document.getElementById('version-badge');
+        const dlWin = document.getElementById('dl-windows');
+        const dlMac = document.getElementById('dl-macos');
+        const dlLinux = document.getElementById('dl-linux');
+        const checksumLink = document.getElementById('checksum-link');
+
+        try {
+            const res = await fetch(
+                `https://api.github.com/repos/${REPO}/releases/latest`,
+                { headers: { 'Accept': 'application/vnd.github+json' } }
+            );
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const release = await res.json();
+            const tag = release.tag_name;
+
+            badge.textContent = tag;
+            badge.classList.remove('loading');
+
+            const assets = release.assets || [];
+            for (const asset of assets) {
+                const name = asset.name;
+                const url = asset.browser_download_url;
+
+                if (name.endsWith('-setup.exe') || name.endsWith('-win64-setup.exe')) {
+                    dlWin.href = url;
+                    dlWin.onclick = null;
+                    dlWin.textContent = `Download ${tag}`;
+                } else if (name.endsWith('.dmg')) {
+                    dlMac.href = url;
+                    dlMac.onclick = null;
+                    dlMac.textContent = `Download ${tag}`;
+                } else if (name.endsWith('.deb')) {
+                    dlLinux.href = url;
+                    dlLinux.onclick = null;
+                    dlLinux.textContent = `Download ${tag}`;
+                } else if (name === 'CHECKSUMS.sha256') {
+                    checksumLink.href = url;
+                }
+            }
+        } catch (err) {
+            console.warn('Could not fetch latest release:', err);
+            badge.textContent = 'v0.8.0';
+            badge.classList.remove('loading');
+
+            // Fallback: direct release page link
+            const fallback = `https://github.com/${REPO}/releases/latest`;
+            dlWin.href = fallback;
+            dlWin.onclick = null;
+            dlWin.textContent = 'Go to Releases';
+            dlMac.href = fallback;
+            dlMac.onclick = null;
+            dlMac.textContent = 'Go to Releases';
+            dlLinux.href = fallback;
+            dlLinux.onclick = null;
+            dlLinux.textContent = 'Go to Releases';
+        }
+    })();
+</script>
+
+</body>
+</html>
